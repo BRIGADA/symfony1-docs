@@ -1,22 +1,22 @@
-Advanced Doctrine Usage
-=======================
+Продвинутое использование Doctrine
+==================================
 
 *By Jonathan H. Wage*
 
-Writing a Doctrine Behavior
----------------------------
+Написание поведения Doctrine
+----------------------------
 
-In this section we will demonstrate how you can write a behavior using Doctrine 1.2.
-We'll create an example that allows you to easily maintain a cached count of relationships
-so that you don't have to query the count every single time.
+В этом разделе мы покажем как вы можете опысывать свои собственные модели поведения в Doctrine 1.2.
+Мы создадим пример, который упростит вам содержание в кеше количества взаимоотношений,
+что позволит не запрашивать это количество каждый раз.
 
-The functionality is quite simple. For all the relationships you want to maintain
-a count for, the behavior will add a column to the model to store the current count.
+Функциональность предельно проста. Для всех требующих счётчика отношений,
+поведение добавит столбец к модели, в котором будет сохраняться текущее значение.
 
-### The Schema
+### Схема
 
-Here is the schema we will use to start with. Later we will modify this and add the
-`actAs` definition for the behavior we are about to write:
+Вот схема, которую мы будем использовать для начала. Позже мы изменим её и добавим определение
+`actAs` для поведения, которое напишем:
 
     [yml]
     # config/doctrine/schema.yml
@@ -39,17 +39,17 @@ Here is the schema we will use to start with. Later we will modify this and add 
           onDelete: CASCADE
           foreignAlias: Posts
 
-Now we can build everything for that schema:
+Теперь построем все необходимые классы для этой схемы:
 
     $ php symfony doctrine:build --all
 
-### The Template
+### Шаблон
 
-First we need to write the basic `Doctrine_Template` child class that will be
-responsible for adding the columns to the model that will store the counts.
+В начале нам необходимо написать простой дочерний класс `Doctrine_Template`, который
+будет отвечать за добавление хранящих счётчики столбцов к модели.
 
-You can simply put this somewhere in one of the project `lib/` directories and symfony
-will be able to autoload it for you:
+Вы можете просто поместить этот код куда-нибудь в каталоги `lib/` проекта и symfony
+автоматически загрузит его для вас:
 
     [php]
     // lib/count_cache/CountCache.class.php
@@ -64,7 +64,7 @@ will be able to autoload it for you:
       }
     }
 
-Now let's modify the `Post` model to `actAs` the `CountCache` behavior:
+Теперь изменим модель `Post`, указав в `actAs` поведение `CountCache`:
 
     [yml]
     # config/doctrine/schema.yml
@@ -73,17 +73,16 @@ Now let's modify the `Post` model to `actAs` the `CountCache` behavior:
         CountCache: ~
       # ...
 
-Now that we have the `Post` model using the `CountCache` behavior let me explain
-a little about what happens with it.
+Теперь, когда наша модель `Post` использует поведение `CountCache` позвольте рассказать
+немного о том, что собственно происходит.
 
-When the mapping information for a model is instantiated, any attached behaviors
-get the `setTableDefinition()` and `setUp()` methods invoked. Just like you have
-in the `BasePost` class in `lib/model/doctrine/base/BasePost.class.php`. This
-allows you to add things to any model in a plug n' play fashion. This can be
-columns, relationships, event listeners, etc.
+При обработке информации о модели вызываются методы
+`setTableDefinition()` и `setUp()` всех прикреплённых к ней поведений. Это же произойдёт
+и с классом `BasePost` в `lib/model/doctrine/base/BasePost.class.php`. Таким образом вы можете добавить
+некоторые вещи к модели прямо на лету. Это могут быть столбцы, отношения, обработчики событий и т.д.
 
-Now that you understand a little bit about what is happening, let's make the
-`CountCache` behavior actually do something:
+Теперь, когда вы немного понимаете происходящее, давайте наделим поведение `CountCache`
+чем нибудь полезным:
 
     [php]
     class CountCache extends Doctrine_Template
@@ -96,13 +95,13 @@ Now that you understand a little bit about what is happening, let's make the
       {
         foreach ($this->_options['relations'] as $relation => $options)
         {
-          // Build column name if one is not given
+          // Создаём имя столбца, если оно не задано
           if (!isset($options['columnName']))
           {
             $this->_options['relations'][$relation]['columnName'] = 'num_'.Doctrine_Inflector::tableize($relation);
           }
 
-          // Add the column to the related model
+          // Добавление столбца к связанной модели
           $columnName = $this->_options['relations'][$relation]['columnName'];
           $relatedTable = $this->_table->getRelation($relation)->getTable();
           $this->_options['relations'][$relation]['className'] = $relatedTable->getOption('name');
@@ -111,11 +110,10 @@ Now that you understand a little bit about what is happening, let's make the
       }
     }
 
-The above code will now add columns to maintain the count on the related model.
-So in our case, we're adding the behavior to the `Post` model for the `Thread`
-relationship. We want to maintain the number of posts any given `Thread` instance
-has in a column named `num_posts`. So now modify the YAML schema to
-define the extra options for the behavior:
+Код выше добавляет столбец, который будет обслуживать счётчик для связанной модели.
+Таким образом в нашем случае, мы добавляем поведение к модели `Post` для взаимосвязи `Thread`.
+Мы хотим хранить количество сообщений любого экземпляра `Thread` в столбце с именем `num_posts`.
+Поэтому изменим YAML-схему, включив в определение поведения дополнительные опции:
 
     [yml]
     # ...
@@ -129,14 +127,14 @@ define the extra options for the behavior:
               foreignAlias: Posts
       # ...
 
-Now the `Thread` model has a `num_posts` column that we will keep up to date
-with the number of posts that each thread has.
+Теперь модель `Thread` содержит столбец `num_posts`, который сохраняет актуальное значение счётчика
+сообщений каждого треда.
 
-### The Event Listener
+### Обработчик событий
 
-The next step to building the behavior is to write a record event listener
-that will be responsible for keeping the count up to date when we insert new records,
-delete a record or batch DQL delete records:
+Следующим шагом построения поведения будет написание обработчика собитий, 
+который будет отвечать за поддержание актуальности счётчика при вставке новых записей,
+удалении одной или нескольких записей:
 
     [php]
     class CountCache extends Doctrine_Template
@@ -151,9 +149,8 @@ delete a record or batch DQL delete records:
       }
     }
 
-Before we go any further we need to define the `CountCacheListener` class that
-extends `Doctrine_Record_Listener`. It accepts an array of options that are simply
-forwarded to the listener from the template:
+Перед тем как двинуться дальше, нам необходимо определить класс `CountCacheListener` наследующий `Doctrine_Record_Listener`.
+Он принимает массив опций, которые просто передаются из в обработчик из шаблона:
 
     [php]
     // lib/model/count_cache/CountCacheListener.class.php
@@ -168,16 +165,15 @@ forwarded to the listener from the template:
       }
     }
 
-Now we must utilize the following events in order to keep our counts up to date:
+Теперь для поддержания актуальности счётчика мы должны задействовать следующие события:
 
- * **postInsert()**: Increments the count when a new object is inserted;
+ * **postInsert()**: Увеличивает счётчик при вставке нового объекта;
 
- * **postDelete()**: Decrements the count when a object is deleted;
+ * **postDelete()**: Уменьшает счётчик при удалении объекта;
 
- * **preDqlDelete()**: Decrements the counts when records are deleted through
-   a DQL delete.
+ * **preDqlDelete()**: Уменьшает счётчик при удалении записей через DQL.
 
-First let's define the `postInsert()` method:
+Вначале определим метод `postInsert()`:
 
     [php]
     class CountCacheListener extends Doctrine_Record_Listener
@@ -202,8 +198,8 @@ First let's define the `postInsert()` method:
       }
     }
 
-The above code will increment the counts by one for all the configured relationships
-by issuing a DQL UPDATE query when a new object like below is inserted:
+Этот код увеличивает счётчики на единицу для всех сконфигурированных взаимосвязей
+через вызов DQL-запроса UPDATE при вставке нового объекта:
 
     [php]
     $post = new Post();
@@ -211,11 +207,11 @@ by issuing a DQL UPDATE query when a new object like below is inserted:
     $post->body = 'body of the post';
     $post->save();
 
-The `Thread` with an `id` of `1` will get the `num_posts` column incremented by `1`.
+Для `Thread` с `id` равным `1` увеличивается значение столбца `num_posts` на `1`.
 
-Now that the counts are being incremented when new objects are inserted, we
-need to handle when objects are deleted and decrement the counts. We will do this
-by implementing the `postDelete()` method:
+Теперь когда счётчики увеличиваются при вставке новых объектов, 
+нам необходимо обработать удаление объектов и соответствующее уменьшение счётчиков.
+Мы сделаем это, реализовав метод `postDelete()`:
 
     [php]
     class CountCacheListener extends Doctrine_Record_Listener
@@ -240,16 +236,15 @@ by implementing the `postDelete()` method:
       }
     }
 
-The above `postDelete()` method is almost identical to the `postInsert()` the
-only difference is we decrement the `num_posts` column by `1` instead of
-incrementing it. It handles the following code if we were to delete the `$post`
-record we saved previously:
+Метод `postDelete()` очень похож на `postInsert()` за исключением того, что значение
+столбца `num_posts` уменьшается на `1`, а не увеличивается.
+Он обработает следующий, если мы удалим запись `$post`, которую создали ранее:
 
     [php]
     $post->delete();
 
-The last piece to the puzzle is to handle when records are deleted using a DQL
-update. We can solve this by using the `preDqlDelete()` method:
+Последним элементом головоломки станет обработка удаления записей через DQL.
+Мы решим это при помощи метода `preDqlDelete()`:
 
     [php]
     class CountCacheListener extends Doctrine_Record_Listener
@@ -282,9 +277,8 @@ update. We can solve this by using the `preDqlDelete()` method:
       }
     }
 
-The above code clones the `DQL DELETE` query and transforms it to a `SELECT` which
-allows us to retrieve the `ID`s that will be deleted so that we can update the counts
-of those records that were deleted.
+Этот код клонирует запрос `DQL DELETE` и трансформирует его в `SELECT`, который позволяет получить `ID` удаляемых записей,
+а затем использует их для обновления счётчиков.
 
 Now we have the following scenario taken care of and the counts will be decremented
 if we were to do the following:
@@ -316,7 +310,7 @@ properly:
 
 That's it! The behavior is finished. The last thing we'll do is test it out a bit.
 
-### Testing
+### Тестирование
 
 Now that we have the code implemented, let's give it a test run with some sample
 data fixtures:
@@ -408,8 +402,8 @@ Now we've deleted all the related posts and the `num_posts` should be zero:
 That is it! I hope this article was both useful in the sense that you learned
 something about behaviors and the behavior itself is also useful to you!
 
-Using Doctrine Result Caching
------------------------------
+Использование кеширования результатов Doctrine
+----------------------------------------------
 
 In heavily trafficked web applications it is a common need to cache information
 to save your CPU resources. With the latest Doctrine 1.2 we have made a lot of
