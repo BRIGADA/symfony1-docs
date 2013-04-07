@@ -280,8 +280,7 @@
 Этот код клонирует запрос `DQL DELETE` и трансформирует его в `SELECT`, который позволяет получить `ID` удаляемых записей,
 а затем использует их для обновления счётчиков.
 
-Now we have the following scenario taken care of and the counts will be decremented
-if we were to do the following:
+Имея подобный сценарий, мы автоматизируем уменьшение счётчиков при выполнении следующего действия:
 
     [php]
     Doctrine::getTable('Post')
@@ -290,8 +289,7 @@ if we were to do the following:
       ->where('id = ?', 1)
       ->execute();
 
-Or even if we were to delete multiple records the counts would still be decremented
-properly:
+Счётчики уменьшаются даже если мы удаляем несколько записей:
 
     [php]
     Doctrine::getTable('Post')
@@ -301,19 +299,18 @@ properly:
       ->execute();
 
 >**NOTE**
->In order for the `preDqlDelete()` method to be invoked you must enable
->an attribute. The DQL callbacks are off by default due to them costing
->a little extra. So if you want to use them, you must enable them.
+>Для того, чтобы метод `preDqlDelete()` вызывался, вы должны включить специальный атрибут.
+>По умолчанию, обратные вызовы DQL выключены из-за вызываемой ими дополнительно нагрузки.
+>Поэтому, если вы хотите использовать данную возможность, вам необходимо принудительно включить её.
 >
 >     [php]
 >     $manager->setAttribute(Doctrine_Core::ATTR_USE_DQL_CALLBACKS, true);
 
-That's it! The behavior is finished. The last thing we'll do is test it out a bit.
+Вот и всё! Разработка нашего поведения завершена. Всё что нам осталось сделать -- это неписать для него небольшой тест.
 
 ### Тестирование
 
-Now that we have the code implemented, let's give it a test run with some sample
-data fixtures:
+После реализации кода, давайте проверим его с помощью следующих начальных данных:
 
     [yml]
     # data/fixtures/data.yml
@@ -329,12 +326,11 @@ data fixtures:
           post3:
             body: Ya it is pretty cool
 
-Now, build everything again and load the data fixtures:
+Перестроим все классы и загрузим данные:
 
     $ php symfony doctrine:build --all --and-load
 
-Now everything is built and the data fixtures are loaded; so let's run a test to see
-if the counts have been kept up to date:
+Теперь давайте запустим тест, чтобы увидеть работу счётчиков:
 
     $ php symfony doctrine:dql "FROM Thread t, t.Posts p"
     doctrine - executing: "FROM Thread t, t.Posts p" ()
@@ -355,15 +351,14 @@ if the counts have been kept up to date:
     doctrine -       thread_id: '1'
     doctrine -       body: 'Ya it is pretty cool'
 
-You will see the `Thread` model has a `num_posts` column, whose value is three.
-If we were to delete one of the posts with the following code it will decrement
-the count for you:
+Вы видите, что в модели `Thread` есть столбец `num_posts`, значение которого равно трём.
+Если мы удалим одно из сообщений следующим кодом, то счётчик должен измениться:
 
     [php]
     $post = Doctrine_Core::getTable('Post')->find(1);
     $post->delete();
 
-You will see that the record is deleted and the count is updated:
+Вы видите, что запись действительно удалена и значение счётчика обновлено:
 
     $ php symfony doctrine:dql "FROM Thread t, t.Posts p"
     doctrine - executing: "FROM Thread t, t.Posts p" ()
@@ -380,8 +375,7 @@ You will see that the record is deleted and the count is updated:
     doctrine -       thread_id: '1'
     doctrine -       body: 'Ya it is pretty cool'
 
-This even works if we were to batch delete the remaining two records with a DQL
-delete query:
+Это работает даже если вы удалите оставшиеся две записи:
 
     [php]
     Doctrine_Core::getTable('Post')
@@ -390,7 +384,7 @@ delete query:
       ->where('body LIKE ?', '%cool%')
       ->execute();
 
-Now we've deleted all the related posts and the `num_posts` should be zero:
+Мы удалили все связанные записи, и в `num_posts` должен быть ноль:
 
     $ php symfony doctrine:dql "FROM Thread t, t.Posts p"
     doctrine - executing: "FROM Thread t, t.Posts p" ()
@@ -399,26 +393,23 @@ Now we've deleted all the related posts and the `num_posts` should be zero:
     doctrine -   num_posts: '0'
     doctrine -   Posts: {  }
 
-That is it! I hope this article was both useful in the sense that you learned
-something about behaviors and the behavior itself is also useful to you!
+Вот и всё! Я надеюсь, эта статья будет полезна не только из-за полученных знаний,
+но и само разработанное поведение может быть вам полезно!
 
 Использование кеширования результатов Doctrine
 ----------------------------------------------
 
-In heavily trafficked web applications it is a common need to cache information
-to save your CPU resources. With the latest Doctrine 1.2 we have made a lot of
-improvements to the result set caching that gives you much more control over
-deleting cache entries from the cache drivers. Previously it was not possible
-to specify the cache key used to store the cache entry so you couldn't really
-identify the cache entry in order to delete it.
+Для высоконагруженных веб-приложений требуется кешировать информацию для снижения нагрузки на процессорные ресурсы.
+В Doctrine 1.2 мы сделали множество улучшений кеширования результатов, дающих вам больший контроль над удалением записей из кеша.
+Раньше нельзя было указывать ключ, под которым бы хранился элемент кеша, поэтому вы немогли никак идентифицировать его для удаления.
 
-In this section we will show you a simple example of how you can utilize result set
-caching to cache all your user related queries as well as using events to make
-sure they are properly cleared when some data is changed.
+В этом разделе мы продемонстрируем вам пример использования кеширования результатов
+для всех ваших связанных с пользователями запросов, а также использование событий для очистки кеша
+при изменении некоторых данных.
 
-### Our Schema
+### Схема
 
-For this example, let's use the following schema:
+Для примера мы будем использовать следующую схему:
 
     [yml]
     # config/doctrine/schema.yml
@@ -432,11 +423,11 @@ For this example, let's use the following schema:
           type: string(255)
           notnull: true
 
-Now let's build everything from that schema with the following command:
+Теперь построим классы по этой схеме следующей командой:
 
     $ php symfony doctrine:build --all
 
-Once you do that, you should have the following `User` class generated for you:
+В результате у вас появится класс `User`:
 
     [php]
     // lib/model/doctrine/User.class.php
@@ -454,9 +445,9 @@ Once you do that, you should have the following `User` class generated for you:
     {
     }
 
-Later in the article you will need to add some code to this class so make note of it.
+Далее в этой статье вам потребуется добавлять в него некоторый код.
 
-### Configuring Result Cache
+### Конфигурирование кеша результатов
 
 In order to use the result cache we need to configure a cache driver for the
 queries to use. This can be done by setting the `ATTR_RESULT_CACHE` attribute.
@@ -485,30 +476,30 @@ use this driver to cache the result sets of the queries.
 
 ### Sample Queries
 
+Представьте, что в вашем приложении есть несколько связанных 
 Now imagine in your application you have a bunch of user related queries
 and you want to clear them whenever some user data is changed.
 
-Here is a simple query that we might use to render a list of users sorted
-alphabetically:
+Вот простой запрос, который позволяет получить отсортированный в алфовитном порядке список пользователей:
 
     [php]
     $q = Doctrine_Core::getTable('User')
         ->createQuery('u')
         ->orderBy('u.username ASC');
 
-Now, we can turn caching on for that query by using the `useResultCache()` method:
+Вы можете включить кеширование для этого запроса, используя метод `useResultCache()`:
 
     [php]
     $q->useResultCache(true, 3600, 'users_index');
 
 >**NOTE**
->Notice the third argument. This is the key that will be used to store the cache
->entry for the results in the cache driver. This allows us to easily identify
->that query and delete it from the cache driver.
+>Обратите внимание на третий аргумент.
+>Это ключ, который будет использоваться для сохранения результатов в кеше.
+>Он упрощает идентификацию запроса и удаление его из кеша.
 
-Now when we execute the query it will query the database for the results and store
-them in the cache driver under the key named `users_index` and any subsequent requests
-will get the information from the cache driver instead of asking the database:
+Теперь когда мы выполним запрос, он обратится к базе данных за результатами
+и сохранит их в кеше под ключом `users_index`, а последующие запросы будут получать
+результаты уже из кеша минуя обращение к базе данных:
 
     [php]
     $users = $q->execute();
@@ -531,7 +522,7 @@ Now if we check in the cache driver, you will see that there is an entry named
       echo 'cache does not exist';
     }
 
-### Deleting Cache
+### Удаление кеша
 
 Now that the query is cached, we need to learn a bit about how we can delete
 that cache. We can delete it manually using the cache driver API or we can utilize
@@ -543,44 +534,39 @@ First we will just demonstrate the raw API of the cache driver before we impleme
 it in an event.
 
 >**TIP**
->To get access to the result cache driver instance you can get it from the
->`Doctrine_Manager` class instance.
+>Для доступа к экземпляру кеша результатов, вы можете воспользоваться экземпляром класса `Doctrine_Manager`.
 >
 >     [php]
 >     $cacheDriver = $manager->getAttribute(Doctrine_Core::ATTR_RESULT_CACHE);
 >
->If you don't already have access to the `$manager` variable already you can
->retrieve the instance with the following code.
+>Если у вас ешё нет долтупа к переменной `$manager`, вы можете полутить её экземпляр следующим кодом.
 >
 >     [php]
 >     $manager = Doctrine_Manager::getInstance();
 
-Now we can begin to use the API to delete our cache entries:
+Теперь мы можем использовать API для удаления записей из кеша:
 
     [php]
     $cacheDriver->delete('users_index');
 
-You probably have more than one query prefixed with `users_` and it would make
-sense to delete the result cache for all of them. In this case, the `delete()`
-method by itself will not work. For this we have a method named
-`deleteByPrefix()`, which allows us to delete any cache entry that contains the
-given prefix. Here is an example:
+Вполне вероятно, что у вас будет более одного начинающегося с `users_` запроса,
+и вам захочется удалить все их кешированные результаты.
+В этом случае, метод `delete()` нам не поможет. Однако поможет метод `deleteByPrefix()`,
+который позволяет нам удалять все элементы кеша, содержащие указанный префикс.
+Пример:
 
     [php]
     $cacheDriver->deleteByPrefix('users_');
 
-We have a few other convenient methods we can use to delete cache entries if the
-`deleteByPrefix()` is not sufficient for you:
+Также есть несколько других методов для удаления записей из кеша, помимо `deleteByPrefix()`:
 
- * `deleteBySuffix($suffix)`: Deletes cache entries that have the passed
-   suffix;
+ * `deleteBySuffix($suffix)`: Удаляет элементы кеша, содержащие переданный суффикс;
 
- * `deleteByRegexp($regex)`: Deletes cache entries that match the
-   passed regular expression;
+ * `deleteByRegexp($regex)`: Удаляет элементы кеша, которые соответствуют переданному регулярному выражению;
 
- * `deleteAll()`: Deletes all cache entries.
+ * `deleteAll()`: Удаляет все элементы кеша.
 
-### Deleting with Events
+### Удаление по событиям
 
 The ideal way to clear the cache would be to automatically clear it whenever some
 user data is modified. We can do this by implementing a `postSave()` event in our
@@ -618,8 +604,8 @@ the data fresh from the database and cache it again for subsequent requests.
 While this example is very simple it should demonstrate pretty well how you can
 use these features to implement fine grained caching on your Doctrine queries.
 
-Writing a Doctrine Hydrator
----------------------------
+Написание гидратора Doctrine
+----------------------------
 
 One of the key features of Doctrine is the ability to transform a `Doctrine_Query`
 object to the various result set structures. This is the job of the Doctrine
@@ -633,7 +619,7 @@ understand, yet very useful. It will allow you to select two columns and hydrate
 the data to a flat array where the first selected column is the key and the second
 select column is the value.
 
-### The Schema and Fixtures
+### Схема и начальные данные
 
 To get started first we need a simple schema to run our tests with. We will just use
 a simple `User` model:
@@ -663,7 +649,7 @@ Now build everything with the following command:
 
     $ php symfony doctrine:build --all --and-load
 
-### Writing the Hydrator
+### Написание гидратора
 
 To write a hydrator all we need to do is write a new class which extends `Doctrine_Hydrator_Abstract`
 and must implement a `hydrateResultSet($stmt)` method. It receives the `PDOStatement`
@@ -708,7 +694,7 @@ what we want:
 Well that was easy! The hydrator code is finished and it does exactly what we want
 so let's test it!
 
-### Using the Hydrator
+### Использование гидратора
 
 To use and test the hydrator we first need to register it with Doctrine so that
 when we execute some queries, Doctrine is aware of the hydrator class we have written.
