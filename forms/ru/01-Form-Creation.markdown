@@ -311,9 +311,9 @@
 
 ![Страница, отображаемая после отправки формы](/images/forms_book/en/01_06.png "Страница, отображаемая после отправки формы")
 
-Instead of creating the `params` array, it would be easier to get the information from the user directly in an array. Listing 1-6 modifies the `name` HTML attribute from widgets to store the field values in the `contact` array.
+Вместо создания массива `params`, гораздо проще будет получить информацию от пользователя сразу в массиве. Листинг 1-6 изменяет HTML-атрибут `name` виджетов таким образом, что вводимые значения сохраняются в массиве `contact`.
 
-Listing 1-6 - Modification of the `name` HTML attribute from widgets
+Листинг 1-6 - Модификация HTML-атрибута `name` из виджетов
 
     [php]
     class ContactForm extends BaseForm
@@ -330,11 +330,11 @@ Listing 1-6 - Modification of the `name` HTML attribute from widgets
       }
     }
 
-Calling `setNameFormat()` allows us to modify the `name` HTML attribute for all widgets. `%s` will automatically be replaced by the name of the field when generating the form. For example, the `name` attribute will then be `contact[email]` for the `email` field. PHP automatically creates an array with the values of a request including a `contact[email]` format. This way the field values will be available in the `contact` array.
+Вызов `setNameFormat()` позволяет нам изменить HTML-атрибут `name` для всех виджетов. `%s` автоматически заменяется на имя поля при генерации формы. Например, для поля `email` атрибут `name` будет `contact[email]`. PHP автоматически создаёт массив из включённых в запрос значений. Таким образом, значения полей будут доступны в массиве `contact`.
 
-We can now directly get the `contact` array from the `request` object as shown in Listing 1-7.
+Теперь мы можем напрямую получить массив `contact` из объекта `request` как показано в Листинге 1-7.
 
-Listing 1-7 - New format of the `name` attributes in the action widgets
+Листинг 1-7 - Новый формат атрибутов `name` виджетов в действии
 
     [php]
     public function executeSubmit($request)
@@ -344,19 +344,19 @@ Listing 1-7 - New format of the `name` attributes in the action widgets
       $this->redirect('contact/thankyou?'.http_build_query($request->getParameter('contact')));
     }
 
-When displaying the HTML source of the form, you can see that symfony has generated a `name` attribute depending not only on the field name and format, but also an `id` attribute. The `id` attribute is automatically created from the `name` attribute by replacing the forbidden characters by underscores (`_`):
+При просмотре исходного HTML-кода формы вы можете видеть, что Symfony генерирует не только атрибут `name` в зависимости от имени и формата, но и атрибут `id`. Атрибут `id` автоматически создаётся из атрибута `name` заменой недопустимых символов на подчёркивания (`_`):
 
-  | **Name**  | **Attribute `name`** | **Attribute `id`**  |
-  | --------- | -------------------- | ------------------- |
-  | name      | contact[name]        | contact_name        |
-  | email     | contact[email]       | contact_email       |
-  | message   | contact[message]     | contact_message     |
+  | **Имя**  | **Атрибут `name`** | **Атрибут `id`**  |
+  | --------- | ----------------- | ----------------- |
+  | name      | contact[name]     | contact_name      |
+  | email     | contact[email]    | contact_email     |
+  | message   | contact[message]  | contact_message   |
 
-### Another solution
+### Другое решение
 
-In this example, we used two actions to manage the form: `index` for the display, `submit` for the submit. Since the form is displayed with the `GET` method and submitted with the `POST` method, we can also merge the two methods in the `index` method as shown in Listing 1-8.
+В этом примере мы используем два действия для управления формой: `index` для отображения и `submit` для обработки присланных данных. Так как форма отображается с методом `GET` и отправляется с методом `POST`, мы можем объединить эти два метода в действии `index`, как показано в Листинге 1-8.
 
-Listing 1-8 - Merging of the two actions used in the form
+Листинг 1-8 - Объединение двух используемых формой действий
 
     [php]
     class contactActions extends sfActions
@@ -372,30 +372,30 @@ Listing 1-8 - Merging of the two actions used in the form
       }
     }
 
-You also need to change the form `action` attribute in the `indexSuccess.php` template:
+Также вам необходимо изменить атрибут `action` формы в шаблоне `indexSuccess.php`:
 
     [php]
     <form action="<?php echo url_for('contact/index') ?>" method="POST">
 
-As we will see later, we prefer to use this syntax since it is shorter and makes the code more coherent and understandable.
+Как мы увидим позже, мы предпочитаем использовать такой синтаксис, поскольку он короче и делает код более последовательным и понятным.
 
-Configuring the Widgets
------------------------
+Конфигурирование виджетов
+-------------------------
 
-### Widgets options
+### Опции виджетов
 
-If a website is managed by several webmasters, we would certainly like to add a drop-down list with themes in order to redirect the message according to what is asked (Figure 1-7). Listing 1-9 adds a `subject` with a drop-down list using the `sfWidgetFormSelect` widget.
+Если сайт находится в ведении нескольких веб-мастеров, нам конечно же захочется добавить выпадающий список с темами, чтобы перенаправлять сообщения соответственно вопросу (Рисунок 1-7). Листинг 1-9 добавляет поле `subject` с выпадающим списком, используя виджет `sfWidgetFormSelect`.
 
-Figure 1-7 - Adding a `subject` Field to the Form
+Рисунок 1-7 - Добавление к форме поля `subject`
 
-![Adding a `subject` Field to the Form](/images/forms_book/en/01_07.png "Adding a `subject` Field to the Form")
+![Добавление поля `subject`](/images/forms_book/en/01_07.png "Добавление поля `subject`")
 
-Listing 1-9 - Adding a `subject` Field to the Form
+Листинг 1-9 - Добавление к форме поля `subject`
 
     [php]
     class ContactForm extends BaseForm
     {
-      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      protected static $subjects = array('Тема А', 'Тема Б', 'Тема В');
 
       public function configure()
       {
@@ -411,91 +411,93 @@ Listing 1-9 - Adding a `subject` Field to the Form
     }
 
 >**SIDEBAR**
->The `choices` option of the `sfWidgetFormSelect` Widget
+>Опция `choices` виджета `sfWidgetFormSelect`
 >
->PHP does not make any distinction between an array and an associative array, so the array we used for the subject list is identical to the following code:
->
->     [php]
->     $subjects = array(0 => 'Subject A', 1 => 'Subject B', 2 => 'Subject C');
->
->The generated widget takes the array key as the `value` attribute of the `option` tag, and the related value as content of the tag:
+>PHP не разделяет массивы и ассоциативные массивы, поэтому использованный нами массив со списком тем идентичен следующему коду:
 >
 >     [php]
->     <select name="contact[subject]" id="contact_subject">
->       <option value="0">Subject A</option>
->       <option value="1">Subject B</option>
->       <option value="2">Subject C</option>
->     </select>
+>     $subjects = array(0 => 'Тема А', 1 => 'Тема Б', 2 => 'Тема В');
 >
->In order to change the `value` attributes, we just have to define the array keys:
->
->     [php]
->     $subjects = array('A' => 'Subject A', 'B' => 'Subject B', 'C' => 'Subject C');
->
->Which generates the HTML template:
+>При выводе виджета ключ в массиве становится атрибутом `value` тэга `option`, а соответствующее значение помещается в содержимое тэга:
 >
 >     [php]
 >     <select name="contact[subject]" id="contact_subject">
->       <option value="A">Subject A</option>
->       <option value="B">Subject B</option>
->       <option value="C">Subject C</option>
+>       <option value="0">Тема А</option>
+>       <option value="1">Тема Б</option>
+>       <option value="2">Тема В</option>
+>     </select>
+>
+>Для изменения атрибутов `value`, нам необходимо просто определить ключи массива:
+>
+>     [php]
+>     $subjects = array('А' => 'Тема А', 'Б' => 'Тема Б', 'В' => 'Тема В');
+>
+>Это приведёт к генерации следующего HTML:
+>
+>     [php]
+>     <select name="contact[subject]" id="contact_subject">
+>       <option value="А">Тема А</option>
+>       <option value="Б">Тема Б</option>
+>       <option value="В">Тема В</option>
 >     </select>
 
-The `sfWidgetFormSelect` widget, like all widgets, takes a list of options as the first argument. An option may be mandatory or optional. The `sfWidgetFormSelect` widget has a mandatory option, `choices`. Here are the available options for the widgets we already used:
+Виджет `sfWidgetFormSelect`, как и все виджеты, принимает список опцив в качестве первого аргумента. Опции могут быть обязательными и нет. В виджете `sfWidgetFormSelect` обязательной опцией является `choices`. Вот доступные опции для использованных нами виджетов:
 
-  | **Widget**             | **Mandatory Options** | **Additional Options**           |
-  | ---------------------- | --------------------- | -------------------------------- |
-  | `sfWidgetFormInput`    | -                     | `type` (default to `text`)       |
-  |                        |                       | `is_hidden` (default to `false`) |
-  | `sfWidgetFormSelect`   | `choices`             | `multiple` (default to `false`)  |
-  | `sfWidgetFormTextarea` | -                     | -                                |
+  | **Виджет**             | **Обязательные опции** | **Additional Options**             |
+  | ---------------------- | ---------------------- | ---------------------------------- |
+  | `sfWidgetFormInput`    | -                      | `type` (по уполчанию `text`)       |
+  |                        |                        | `is_hidden` (по уполчанию `false`) |
+  | `sfWidgetFormSelect`   | `choices`              | `multiple` (по уполчанию `false`)  |
+  | `sfWidgetFormTextarea` | -                      | -                                  |
 
 >**Tip**
->If you want to know all of the options for a widget, you can refer to the complete API documentation available online at  ([http://www.symfony-project.org/api/1_2/](http://www.symfony-project.org/api/1_2/)). All of the options are explained, as well as the additional options default values. For instance, all of the options for the `sfWidgetFormSelect` are available here: ([http://www.symfony-project.org/api/1_2/sfWidgetFormSelect](http://www.symfony-project.org/api/1_2/sfWidgetFormSelect)).
+>Если вам интересно знать обо всех опциях виджетов, вы можете найти их в документации по API, доступной онлайн по адресу  ([http://www.symfony-project.org/api/1_4/](http://www.symfony-project.org/api/1_4/)).
+>Описаны все опции, а также приведены значения по умолчанию для необязательных опций.
+>Например, все опции `sfWidgetFormSelect` доступны здесь: ([http://www.symfony-project.org/api/1_4/sfWidgetFormSelect](http://www.symfony-project.org/api/1_4/sfWidgetFormSelect)).
 
-### The Widgets HTML Attributes
+### HTML-атрибуты виджетов
 
-Each widget also takes a list of HTML attributes as second optional argument. This is very helpful to define default HTML attributes for the generated form tag. Listing 1-10 shows how to add a `class` attribute to the `email` field.
+Каждый виджет также принимает список HTML-атрибутов вторым необязательным аргументом. Это очень полезно для определения заданных по умолчанию HTML-атрибутов, которые будут использованы при генерации тэга формы. Листинг 1-10 показывает как добавить атрибут `class` к полю `email`.
 
-Listing 1-10 - Defining Attributes for a Widget
+Листинг 1-10 - Определение атрибутов для виджета
 
     [php]
     $emailWidget = new sfWidgetFormInputText(array(), array('class' => 'email'));
 
-    // Generated HTML
+    // Генерируемый HTML
     <input type="text" name="contact[email]" class="email" id="contact_email" />
 
-HTML attributes also allow us to override the automatically generated identifier, as shown in Listing 1-11.
+HTML-атрибуты также позволяют нам переопределить генерируемый по умолчанию идентификатор, см. Листинг 1-11.
 
-Listing 1-11 - Overriding the `id` Attribute
+Листинг 1-11 - Переопределение атрибута `id`
 
     [php]
     $emailWidget = new sfWidgetFormInputText(array(), array('class' => 'email', 'id' => 'email'));
 
-    // Generated HTML
+    // Генерируемый HTML
     <input type="text" name="contact[email]" class="email" id="email" />
 
-It is even possible to set default values to the fields using the `value` attribute as Listing 1-12 shows.
+Также возможно установить для поля значение по умолчанию через атрибут `value`, см. Листинг 1-12.
 
-Listing 1-12 - Widgets Default Values via HTML Attributes
+Листинг 1-12 - Значения виджета по умолчанию через HTML-атрибуты
 
     [php]
     $emailWidget = new sfWidgetFormInputText(array(), array('value' => 'Your Email Here'));
 
-    // Generated HTML
+    // Генерируемый HTML
     <input type="text" name="contact[email]" value="Your Email Here" id="contact_email" />
 
-This option works for `input` widgets, but is hard to carry through with `checkbox` or `radio` widgets, and even impossible with a `textarea` widget. The `sfForm` class offers specific methods to define default values for each field in a uniform way for any type of widget.
+Этот способ работает для виджетов `input`, но его трудно реализовать для виджетов `checkbox` или `radio`, и совсем невозможно для виджетов `textarea`. Класс `sfForm` предоставляет специальные методы для определения значений по умолчанию для каждого поля унифицированным способом для любого типа виджетов.
 
 
 >**Note**
->We recommend to define HTML attributes inside the template and not in the form itself (even if it is possible) to preserve the layers of separation as we will see in Chapter three.
+>Мы рекомендуем определять HTML-атрибуты прямо в шаблоне, а не в самой форме (хотя это и возможно), для сохранения разделения на слои как будет показано в Главе 3.
 
-### Defining Default Values For Fields
+### Задание полям значений по умолчанию
 
-It is often useful to define a default value for each field. For instance, when we display a help message in the field that disappears when the user focuses on the field. Listing 1-13 shows how to define default values via the `setDefault()` and `setDefaults()` methods.
+Часто бывает полезно определить значение по умолчанию для каждого поля. Например, когда мы выводим справочное сообщение в поле, которое исчезает, если пользователь перемещает фокус в поле. Листинг 1-13 показывает, как определить значение по умолчанию через методы `setDefault()` и `setDefaults()`.
 
-Listing 1-13 - Default Values of the Widgets via the `setDefault()` and `setDefaults()` Methods
+Листинг 1-13 - Значения по умолчанию для виджетов через методы `setDefault()` и `setDefaults()`
 
     [php]
     class ContactForm extends BaseForm
@@ -506,18 +508,15 @@ Listing 1-13 - Default Values of the Widgets via the `setDefault()` and `setDefa
 
         $this->setDefault('email', 'Your Email Here');
 
-        $this->setDefaults(array('email' => 'Your Email Here', 'name' => 'Your Name Here'));
+        $this->setDefaults(array('email' => 'Введите здесь ваш E-Mail', 'name' => 'Введите здесь ваше имя'));
       }
     }
 
-The `setDefault()` and `setDefaults()` methods are very helpful to define 
-identical default values for every instance of the same form class. If we
-want to modify an existing object using a form, the default values will 
-depend on the instance, therefore they must be dynamic. Listing 1-14 shows
-the `sfForm` constructor has a first argument that sets default values 
-dynamically.
+Методы `setDefault()` и `setDefaults()` крайне полезны для определения идентичных значений по умолчанию для всех экземпляров одного и того же класса формы.
+Если же мы хотим изменять существующие объекты с помощью форм, значения по умолчанию должны зависеть от экземпляра, т.е. быть динамическими.
+В Листинге 1-14 демонстрируется приём в первом аргументе конструктора `sfForm` таких динамичных значений по умолчанию.
 
-Listing 1-14 - Default Values of the Widgets via the Constructor of `sfForm`
+Листинг 1-14 - Значения по умолчанию для виджетов через конструктор `sfForm`
 
     [php]
     public function executeIndex($request)
@@ -528,13 +527,13 @@ Listing 1-14 - Default Values of the Widgets via the Constructor of `sfForm`
     }
 
 >**SIDEBAR**
->Protection XSS (Cross-Site Scripting)
+>Защита от XSS (Cross-Site Scripting)
 >
->When setting HTML attributes for widgets, or defining default values, the `sfForm` class automatically protects these values against XSS attacks during the generation of the HTML code. This protection does not depend on the `escaping_strategy` configuration of the `settings.yml` file. If a content has already been protected by another method, the protection will not be applied again.
+>При установке HTML-атрибутов или определении значений по умолчанию для виджетов, класс `sfForm` автоматически защищает эти значения от XSS-атак при генерации HTML-кода. Эта защита не зависит от конфигурации `escaping_strategy` в файле `settings.yml`. Если содержимое уже защищено другим методом, то повторно защита не применяется.
 >
->It also protects the `'` and `"` characters that might invalidate the generated HTML.
+>Также экранируются символы `'` и `"`, которые могут привести генерируемый HTML в невалидное состояние.
 >
->Here is an example of this protection:
+>Вот пример работы защиты:
 >
 >     [php]
 >     $emailWidget = new sfWidgetFormInputText(array(), array(
@@ -542,7 +541,7 @@ Listing 1-14 - Default Values of the Widgets via the Constructor of `sfForm`
 >       'class' => '<script>alert("foo")</script>',
 >     ));
 >     
->     // Generated HTML
+>     // Сгенерированный HTML
 >     <input
 >       value="Hello &quot;World!&quot;"
 >       class="&lt;script&gt;alert(&quot;foo&quot;)&lt;/script&gt;"
